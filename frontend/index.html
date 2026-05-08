@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0a0420" />
+    <title>Snake Neon Arcade</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Press+Start+2P&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="estilos.css" />
+</head>
+
+<body>
+    <!-- Capa de fondo: rejilla y particulas decorativas -->
+    <div class="fondo-decorativo" aria-hidden="true">
+        <div class="rejilla-fondo"></div>
+        <div class="resplandor resplandor-rosa"></div>
+        <div class="resplandor resplandor-cian"></div>
+        <div class="resplandor resplandor-violeta"></div>
+    </div>
+
+    <main class="contenedor-principal">
+        <!-- ============================================ -->
+        <!-- PANTALLA: MENU PRINCIPAL                      -->
+        <!-- ============================================ -->
+        <section id="pantallaMenu" class="pantalla pantalla-menu activa">
+            <header class="encabezado-juego">
+                <h1 class="titulo-juego">SNAKE</h1>
+                <p class="subtitulo-juego">NEON ARCADE</p>
+            </header>
+
+            <div class="panel-vidrio panel-menu">
+                <h2 class="titulo-panel">Ingresa tu nombre <span class="opcional">(opcional)</span></h2>
+
+                <form id="formularioJugador" class="formulario-jugador" autocomplete="off" novalidate>
+                    <div class="campo-formulario">
+                        <input type="text" id="campoNombre" name="nombre" class="entrada-nombre"
+                            placeholder="Tu nombre..." maxlength="15" spellcheck="false"
+                            aria-label="Nombre del jugador" />
+                        <p id="mensajeValidacion" class="mensaje-validacion" role="alert" aria-live="polite"></p>
+                    </div>
+
+                    <button type="submit" class="boton boton-principal" id="botonJugar">
+                        <span class="texto-boton">JUGAR</span>
+                        <span class="flecha-boton">▶</span>
+                    </button>
+
+                    <button type="button" class="boton boton-secundario" id="botonVerTabla">
+                        <span class="icono-trofeo" aria-hidden="true">🏆</span>
+                        <span>VER TABLA DE POSICIONES</span>
+                    </button>
+                </form>
+            </div>
+
+            <footer class="pie-menu">
+                <button id="botonSilenciar" class="boton-icono" type="button" aria-label="Silenciar sonido"
+                    title="Silenciar sonido">
+                    <span class="icono-sonido" aria-hidden="true">🔊</span>
+                </button>
+                <span class="pie-texto">Snake Neon Arcade · Hecho con neon y pixeles</span>
+            </footer>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- PANTALLA: JUEGO                               -->
+        <!-- ============================================ -->
+        <section id="pantallaJuego" class="pantalla pantalla-juego">
+            <div class="panel-vidrio panel-juego">
+                <div class="barra-superior">
+                    <div class="indicador">
+                        <span class="indicador-etiqueta">SCORE</span>
+                        <span class="indicador-valor" id="valorPuntaje">0</span>
+                    </div>
+                    <div class="indicador">
+                        <span class="indicador-etiqueta">RECORD</span>
+                        <span class="indicador-valor" id="valorRecord">0</span>
+                    </div>
+                    <div class="indicador">
+                        <span class="indicador-etiqueta">SPEED</span>
+                        <span class="indicador-valor" id="valorVelocidad">1</span>
+                    </div>
+                    <button id="botonPausa" class="boton-icono boton-pausa" type="button" aria-label="Pausar"
+                        title="Pausar (P / ESC)">
+                        <svg width="17px" height="17px" viewBox="-1 0 8 8" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+                            fill="#000000">
+                            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                            <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                            <g id="SVGRepo_iconCarrier">
+                                <title>pause [#ffffff]</title>
+                                <desc>Created with Sketch.</desc>
+                                <defs> </defs>
+                                <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                    <g id="Dribbble-Light-Preview" transform="translate(-227.000000, -3765.000000)"
+                                        fill="#ffffff">
+                                        <g id="icons" transform="translate(56.000000, 160.000000)">
+                                            <path
+                                                d="M172,3605 C171.448,3605 171,3605.448 171,3606 L171,3612 C171,3612.552 171.448,3613 172,3613 C172.552,3613 173,3612.552 173,3612 L173,3606 C173,3605.448 172.552,3605 172,3605 M177,3606 L177,3612 C177,3612.552 176.552,3613 176,3613 C175.448,3613 175,3612.552 175,3612 L175,3606 C175,3605.448 175.448,3605 176,3605 C176.552,3605 177,3605.448 177,3606"
+                                                id="pause-[#ffffff]"> </path>
+                                        </g>
+                                    </g>
+                                </g>
+                            </g>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="contenedor-lienzo">
+                    <canvas id="lienzoJuego" width="600" height="600" aria-label="Tablero del juego Snake"></canvas>
+
+                    <!-- Superposiciones del estado del juego -->
+                    <div id="superposicionPausa" class="superposicion oculto">
+                        <div class="contenido-superposicion">
+                            <h2 class="titulo-superposicion">PAUSA</h2>
+                            <p class="texto-superposicion">Presiona P o ESC para continuar</p>
+                            <button id="botonReanudar" type="button" class="boton boton-principal">REANUDAR</button>
+                            <button id="botonSalirPausa" type="button" class="boton boton-secundario">SALIR AL
+                                MENU</button>
+                        </div>
+                    </div>
+
+                    <div id="superposicionFin" class="superposicion oculto">
+                        <div class="contenido-superposicion">
+                            <h2 class="titulo-superposicion titulo-fin">GAME OVER</h2>
+                            <p class="texto-superposicion">
+                                Puntaje final: <strong id="textoPuntajeFinal">0</strong>
+                            </p>
+                            <p id="textoMejorPuntaje" class="texto-superposicion texto-tenue"></p>
+                            <button id="botonReiniciar" type="button" class="boton boton-principal">JUGAR DE
+                                NUEVO</button>
+                            <button id="botonSalirFin" type="button" class="boton boton-secundario">VOLVER AL
+                                MENU</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controles tactiles para movil -->
+                <div class="controles-tactiles" aria-hidden="false">
+                    <button class="boton-direccion" data-direccion="arriba" aria-label="Mover arriba">▲</button>
+                    <div class="fila-direcciones">
+                        <button class="boton-direccion" data-direccion="izquierda"
+                            aria-label="Mover izquierda">◀</button>
+                        <button class="boton-direccion" data-direccion="abajo" aria-label="Mover abajo">▼</button>
+                        <button class="boton-direccion" data-direccion="derecha" aria-label="Mover derecha">▶</button>
+                    </div>
+                </div>
+
+                <div class="ayuda-controles">
+                    <span><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> /
+                        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>
+                    <span><kbd>P</kbd> / <kbd>ESC</kbd> Pausa</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- PANTALLA: TABLA DE POSICIONES                 -->
+        <!-- ============================================ -->
+        <section id="pantallaTabla" class="pantalla pantalla-tabla">
+            <div class="panel-vidrio panel-tabla">
+                <h2 class="titulo-panel"><span class="icono-trofeo" aria-hidden="true">🏆</span> TABLA DE POSICIONES
+                </h2>
+
+                <div class="contenedor-tabla">
+                    <table class="tabla-posiciones" id="tablaPosiciones">
+                        <thead>
+                            <tr>
+                                <th class="col-rango">RANGO</th>
+                                <th class="col-jugador">JUGADOR</th>
+                                <th class="col-puntaje">PUNTAJE</th>
+                                <th class="col-fecha">FECHA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTablaPosiciones">
+                            <tr>
+                                <td colspan="4" class="celda-vacia">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="acciones-tabla">
+                    <button id="botonRefrescarTabla" type="button" class="boton boton-secundario">ACTUALIZAR</button>
+                    <button id="botonVolverMenu" type="button" class="boton boton-principal">VOLVER</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modulos JS -->
+    <script type="module" src="js/juego.js"></script>
+</body>
+
+</html>
