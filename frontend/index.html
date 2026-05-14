@@ -40,14 +40,31 @@
                 <form id="formularioJugador" class="formulario-jugador" autocomplete="off" novalidate>
                     <div class="campo-formulario">
                         <input type="text" id="campoNombre" name="nombre" class="entrada-nombre"
-                            placeholder="Tu nombre..." maxlength="15" spellcheck="false"
+                            placeholder="Usuario Neon..." maxlength="15" spellcheck="false"
                             aria-label="Nombre del jugador" />
+                    </div>
+                    <div class="campo-formulario">
+                        <input type="password" id="campoPassword" name="password" class="entrada-nombre"
+                            placeholder="Contraseña..." maxlength="30" spellcheck="false"
+                            aria-label="Contraseña del jugador" />
                         <p id="mensajeValidacion" class="mensaje-validacion" role="alert" aria-live="polite"></p>
                     </div>
 
                     <button type="submit" class="boton boton-principal" id="botonJugar">
                         <span class="texto-boton">JUGAR</span>
                         <span class="flecha-boton">▶</span>
+                    </button>
+
+                    <button type="button" class="boton boton-secundario" id="botonLogin">
+                        <span>INGRESAR</span>
+                    </button>
+
+                    <button type="button" class="boton boton-secundario" id="botonRegistro">
+                        <span>REGISTRARSE</span>
+                    </button>
+
+                    <button type="button" class="boton boton-secundario" id="botonJugarInvitado">
+                        <span>JUGAR INVITADO</span>
                     </button>
 
                     <button type="button" class="boton boton-secundario" id="botonVerTabla">
@@ -62,7 +79,7 @@
                     title="Silenciar sonido">
                     <span class="icono-sonido" aria-hidden="true">🔊</span>
                 </button>
-                <span class="pie-texto">Snake Neon Arcade · Hecho con neon y pixeles</span>
+                <span class="pie-texto">Snake Neon Arcade</span>
             </footer>
         </section>
 

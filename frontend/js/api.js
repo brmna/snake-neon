@@ -71,6 +71,36 @@ export async function registrarPuntaje(jugador, puntaje) {
 }
 
 /**
+ * Registra un nuevo usuario en la base de datos.
+ */
+export async function registrarUsuario(usuario, password) {
+  return await ejecutarPeticion("/api/usuarios/registro", {
+    method: "POST",
+    body: JSON.stringify({ usuario, password }),
+  });
+}
+
+/**
+ * Inicia sesión con un usuario ya registrado.
+ */
+export async function loginUsuario(usuario, password) {
+  return await ejecutarPeticion("/api/usuarios/login", {
+    method: "POST",
+    body: JSON.stringify({ usuario, password }),
+  });
+}
+
+/**
+ * Comprueba si un usuario ya existe en la base de datos.
+ */
+export async function usuarioExiste(usuario) {
+  const respuesta = await ejecutarPeticion(`/api/usuarios?usuario=${encodeURIComponent(usuario)}`, {
+    method: "GET",
+  });
+  return respuesta.existe === true;
+}
+
+/**
  * Comprueba el estado del servidor.
  */
 export async function consultarSalud() {

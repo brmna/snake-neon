@@ -7,13 +7,13 @@ const repositorioPuntajes = require('../repositorios/repositorioPuntajes');
 const REGEX_NOMBRE = /^[A-Za-z0-9_-]{3,15}$/;
 const PUNTAJE_MAXIMO = 1_000_000;
 
-function crearErrorValidacion(mensaje) {
+const crearErrorValidacion = (mensaje) => {
     const error = new Error(mensaje);
     error.tipo = 'VALIDACION';
     return error;
-}
+};
 
-function fechaHoy() {
+const fechaHoy = () => {
     const ahora = new Date();
     const anio = ahora.getFullYear();
     const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -26,8 +26,8 @@ function ordenarDescendente(coleccion) {
         if (b.puntaje !== a.puntaje) {
             return b.puntaje - a.puntaje;
         }
-        // En empate, gana el registro con fecha mas reciente.
-        return String(b.fecha).localeCompare(String(a.fecha));
+        // En empate, gana el registro con fecha mas reciente (orden descendente por fecha).
+        return new Date(b.fecha) - new Date(a.fecha);
     });
 }
 
@@ -67,42 +67,10 @@ function validarPuntaje(puntaje) {
 async function registrarPuntaje(nombreCrudo, puntajeCrudo) {
     const jugador = validarNombre(nombreCrudo);
     const puntaje = validarPuntaje(puntajeCrudo);
+    const fecha = fechaHoy();
 
-    const todos = await repositorioPuntajes.obtenerTodos();
-    const indiceExistente = todos.findIndex(
-        (registro) => registro.jugador.toLowerCase() === jugador.toLowerCase()
-    );
-
-    let actualizado = false;
-    let registroFinal;
-
-    if (indiceExistente >= 0) {
-        const existente = todos[indiceExistente];
-        if (puntaje > existente.puntaje) {
-            registroFinal = {
-                jugador: existente.jugador,
-                puntaje,
-                fecha: fechaHoy()
-            };
-            todos[indiceExistente] = registroFinal;
-            actualizado = true;
-        } else {
-            // El nuevo puntaje no supera al historico: se conserva el mejor.
-            registroFinal = existente;
-        }
-    } else {
-        registroFinal = {
-            jugador,
-            puntaje,
-            fecha: fechaHoy()
-        };
-        todos.push(registroFinal);
-        actualizado = true;
-    }
-
-    if (actualizado) {
-        await repositorioPuntajes.guardarTodos(todos);
-    }
+    const registroFinal = await repositorioPuntajes.crearOActualizarPuntaje(jugador, puntaje, fecha);
+    const actualizado = registroFinal.puntaje === puntaje && registroFinal.fecha === fecha;
 
     return {
         registro: registroFinal,

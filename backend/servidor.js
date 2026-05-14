@@ -6,8 +6,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const db = require('./db');
 const rutasPuntajes = require('./rutas/rutasPuntajes');
 const rutasSalud = require('./rutas/rutasSalud');
+const rutasUsuarios = require('./rutas/rutasUsuarios');
 
 const PUERTO = process.env.PORT || 3000;
 
@@ -23,6 +25,7 @@ aplicacion.use(express.static(rutaFrontend));
 
 // Montaje de rutas de la API.
 aplicacion.use('/api/puntajes', rutasPuntajes);
+aplicacion.use('/api/usuarios', rutasUsuarios);
 aplicacion.use('/api/salud', rutasSalud);
 
 // Manejador para rutas inexistentes bajo /api.
@@ -43,8 +46,18 @@ aplicacion.use((error, peticion, respuesta, siguiente) => {
     });
 });
 
-aplicacion.listen(PUERTO, () => {
-    console.log(`Servidor Snake Neon escuchando en http://localhost:${PUERTO}`);
-    console.log(`Frontend disponible en      http://localhost:${PUERTO}/`);
-    console.log(`API de puntajes en          http://localhost:${PUERTO}/api/puntajes`);
-});
+async function iniciarServidor() {
+    try {
+        await db.verificarConexion();
+        aplicacion.listen(PUERTO, () => {
+            console.log(`Servidor Snake Neon escuchando en http://localhost:${PUERTO}`);
+            console.log(`Frontend disponible en      http://localhost:${PUERTO}/`);
+            console.log(`API de puntajes en          http://localhost:${PUERTO}/api/puntajes`);
+        });
+    } catch (error) {
+        console.error('[DB] No se pudo conectar a PostgreSQL:', error.message || error);
+        process.exit(1);
+    }
+}
+
+iniciarServidor();

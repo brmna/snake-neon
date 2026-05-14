@@ -40,18 +40,36 @@ export function celdasIguales(a, b) {
 }
 
 /**
- * Formatea una fecha ISO (YYYY-MM-DD) o Date a "YYYY-MM-DD".
+ * Formatea una fecha ISO (YYYY-MM-DD) o Date a formato español "DD/MM/AAAA".
  */
 export function formatearFecha(valor) {
     if (!valor) return '';
-    if (typeof valor === 'string') return valor.slice(0, 10);
+
+    let fecha = null;
+
     if (valor instanceof Date) {
-        const a = valor.getFullYear();
-        const m = String(valor.getMonth() + 1).padStart(2, '0');
-        const d = String(valor.getDate()).padStart(2, '0');
-        return `${a}-${m}-${d}`;
+        fecha = valor;
+    } else if (typeof valor === 'string') {
+        // Acepta formatos ISO yyyy-mm-dd o instancias de fecha largas.
+        const iso = valor.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) {
+            fecha = new Date(`${iso[1]}-${iso[2]}-${iso[3]}`);
+        } else {
+            const parseada = new Date(valor);
+            if (!Number.isNaN(parseada.getTime())) {
+                fecha = parseada;
+            }
+        }
     }
-    return '';
+
+    if (!fecha || Number.isNaN(fecha.getTime())) {
+        return '';
+    }
+
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
 }
 
 /**

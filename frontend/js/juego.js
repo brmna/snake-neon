@@ -8,7 +8,7 @@ import { GestorEntrada } from './entrada.js';
 import { Renderizador } from './renderizador.js';
 import { Interfaz } from './interfaz.js';
 import { sonido } from './sonido.js';
-import { registrarPuntaje, obtenerPuntajes } from './api.js';
+import { registrarPuntaje, obtenerPuntajes, registrarUsuario, loginUsuario, usuarioExiste } from './api.js';
 import {
     nombreEsValido,
     generarNombreInvitado,
@@ -22,8 +22,10 @@ const CONFIG = Object.freeze({
     filas: 24,
     intervaloInicialMs: 140,    // velocidad inicial entre pasos (ms)
     intervaloMinimoMs: 60,      // velocidad maxima alcanzable
-    decrementoPorComida: 4,     // cuanto se reduce el intervalo por cada comida
     puntosPorComida: 10,
+    manzanasPorNivel: 10,
+    incrementoVelocidadPorNivel: 2,
+    velocidadMaxima: 7,
     longitudInicial: 4
 });
 
@@ -51,6 +53,7 @@ class JuegoSnake {
         this.puntaje = 0;
         this.record = this._cargarRecordLocal();
         this.intervaloMs = CONFIG.intervaloInicialMs;
+        this.manzanasComidas = 0;
         this.acumulador = 0;
         this.tiempoAnterior = 0;
 
@@ -78,6 +81,21 @@ class JuegoSnake {
             sonido.sonidoBoton();
             this.interfaz.mostrarPantalla('tabla');
             this.interfaz.cargarTablaDePosiciones(this.jugadorActual);
+        });
+
+        document.getElementById('botonLogin').addEventListener('click', () => {
+            sonido.sonidoBoton();
+            this._loginUsuario();
+        });
+        document.getElementById('botonRegistro').addEventListener('click', () => {
+            sonido.sonidoBoton();
+            this._registrarUsuario();
+        });
+        document.getElementById('botonJugarInvitado').addEventListener('click', () => {
+            sonido.sonidoBoton();
+            if (this.interfaz.campoNombre) this.interfaz.campoNombre.value = '';
+            if (this.interfaz.campoPassword) this.interfaz.campoPassword.value = '';
+            this._iniciarDesdeMenu(true);
         });
 
         // Botones de la tabla
@@ -152,47 +170,96 @@ class JuegoSnake {
     // ============================================================
     // FLUJO DE PARTIDA
     // ============================================================
-    async _iniciarDesdeMenu() {
+    async _iniciarDesdeMenu(forzarInvitado = false) {
         const valorIngresado = this.interfaz.obtenerNombreIngresado().trim();
+        const password = this.interfaz.obtenerPasswordIngresado();
         let nombreFinal;
 
-        if (valorIngresado === '') {
+        if (forzarInvitado || valorIngresado === '') {
             nombreFinal = generarNombreInvitado();
-        } else if (nombreEsValido(valorIngresado)) {
-            nombreFinal = valorIngresado;
-        } else {
+        } else if (!nombreEsValido(valorIngresado)) {
             this.interfaz.establecerError(
                 'Usa 3 a 15 caracteres: letras, numeros, guiones o guiones bajos.'
             );
             return;
+        } else if (password) {
+            this.interfaz.establecerError(
+                'Usa INGRESAR o REGISTRARSE para iniciar con tu cuenta.'
+            );
+            return;
+        } else {
+            nombreFinal = valorIngresado;
         }
 
-        // Evitar que un visitante use el nombre de otro jugador ya registrado.
-        // Solo se permite el nombre si: es nuevo, o si es el mismo que ya guardamos
-        // localmente como propio del dispositivo.
         const miNombre = this._cargarMiNombre();
-        if (!mismoJugador(nombreFinal, miNombre)) {
+        if (!forzarInvitado && valorIngresado !== '' && !mismoJugador(nombreFinal, miNombre)) {
             try {
-                const lista = await obtenerPuntajes();
-                const yaExiste =
-                    Array.isArray(lista) &&
-                    lista.some((registro) => mismoJugador(registro.jugador, nombreFinal));
-                if (yaExiste) {
+                const existe = await usuarioExiste(nombreFinal);
+                if (existe) {
                     this.interfaz.establecerError(
-                        `El nombre "${nombreFinal}" ya esta tomado. Elige otro.`
+                        `El usuario "${nombreFinal}" ya existe. Usa INGRESAR.`
                     );
                     return;
                 }
             } catch (_) {
-                // Si el servidor no responde, dejamos pasar y el POST final decidira.
+                // Si el servidor no responde, dejamos pasar y el POST final decide.
             }
         }
 
         this.jugadorActual = nombreFinal;
         this._guardarMiNombre(nombreFinal);
+        if (this.interfaz.campoPassword) this.interfaz.campoPassword.value = '';
         this.interfaz.establecerError('');
         this.interfaz.mostrarPantalla('juego');
         this._iniciarPartida();
+    }
+
+    async _registrarUsuario() {
+        const usuario = this.interfaz.obtenerNombreIngresado().trim();
+        const password = this.interfaz.obtenerPasswordIngresado();
+        if (!nombreEsValido(usuario)) {
+            this.interfaz.establecerError('Usuario inválido. Usa 3-15 caracteres, letras, números, guiones o guiones bajos.');
+            return;
+        }
+        if (!password || password.length < 6) {
+            this.interfaz.establecerError('La contraseña debe tener al menos 6 caracteres.');
+            return;
+        }
+
+        try {
+            await registrarUsuario(usuario, password);
+            this.jugadorActual = usuario;
+            this._guardarMiNombre(usuario);
+            this.interfaz.establecerError('');
+            this.interfaz.mostrarPantalla('juego');
+            this._iniciarPartida();
+        } catch (error) {
+            this.interfaz.establecerError(error.message || 'No se pudo registrar el usuario.');
+        }
+    }
+
+    async _loginUsuario() {
+        const usuario = this.interfaz.obtenerNombreIngresado().trim();
+        const password = this.interfaz.obtenerPasswordIngresado();
+        if (!nombreEsValido(usuario)) {
+            this.interfaz.establecerError('Usuario inválido. Usa 3-15 caracteres, letras, números, guiones o guiones bajos.');
+            return;
+        }
+        if (!password) {
+            this.interfaz.establecerError('Ingresa tu contraseña para iniciar sesión.');
+            return;
+        }
+
+        try {
+            await loginUsuario(usuario, password);
+            this.jugadorActual = usuario;
+            this._guardarMiNombre(usuario);
+            this.interfaz.establecerError('');
+            this.interfaz.mostrarPantalla('juego');
+            this._iniciarPartida();
+        } catch (error) {
+            this.interfaz.establecerError(error.message || 'No se pudo iniciar sesión.');
+        }
     }
 
     _iniciarPartida() {
@@ -212,6 +279,7 @@ class JuegoSnake {
         this.comida.reubicar(this.serpiente);
 
         this.puntaje = 0;
+        this.manzanasComidas = 0;
         this.intervaloMs = CONFIG.intervaloInicialMs;
         this.acumulador = 0;
         this.tiempoAnterior = performance.now();
@@ -327,20 +395,22 @@ class JuegoSnake {
         const posComida = this.comida.obtenerPosicion();
         this.serpiente.crecer(1);
         this.puntaje += CONFIG.puntosPorComida;
+        this.manzanasComidas += 1;
         if (this.puntaje > this.record) {
             this.record = this.puntaje;
             this._guardarRecordLocal(this.record);
         }
+
+        const nivelVelocidad = Math.min(
+            CONFIG.velocidadMaxima,
+            1 + Math.floor(this.manzanasComidas / CONFIG.manzanasPorNivel) * CONFIG.incrementoVelocidadPorNivel
+        );
+
         this.intervaloMs = Math.max(
             CONFIG.intervaloMinimoMs,
-            this.intervaloMs - CONFIG.decrementoPorComida
+            CONFIG.intervaloInicialMs - (nivelVelocidad - 1) * 10
         );
-        const nivelVelocidad = Math.max(
-            1,
-            Math.round(
-                (CONFIG.intervaloInicialMs - this.intervaloMs) / CONFIG.decrementoPorComida + 1
-            )
-        );
+
         this.interfaz.actualizarMarcador({
             puntaje: this.puntaje,
             record: this.record,

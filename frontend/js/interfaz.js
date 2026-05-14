@@ -26,6 +26,7 @@ export class Interfaz {
         // Formulario
         this.formularioJugador  = document.getElementById('formularioJugador');
         this.campoNombre        = document.getElementById('campoNombre');
+        this.campoPassword      = document.getElementById('campoPassword');
         this.mensajeValidacion  = document.getElementById('mensajeValidacion');
 
         // Tabla de posiciones
@@ -84,6 +85,10 @@ export class Interfaz {
 
     obtenerNombreIngresado() {
         return (this.campoNombre && this.campoNombre.value) || '';
+    }
+
+    obtenerPasswordIngresado() {
+        return (this.campoPassword && this.campoPassword.value) || '';
     }
 
     aplicarSacudida(duracionMs = 320) {

@@ -36,26 +36,38 @@ snake-neon/
      │   └── repositorioPuntajes.js
      └── datos/
          └── puntajes.json
+     └── db/
+         └── init.sql
 ```
 
 ## Instalacion
 
-Requisitos: Node.js 18 o superior.
+Requisitos: Node.js 18 o superior, o Docker con Docker Compose.
+
+### Opcion local sin Docker
 
 ```bash
 cd snake-neon/backend
 npm install
 ```
 
-## Ejecucion
-
-### Opcion A — todo desde el backend (recomendada)
-
-El servidor sirve la API y el frontend en la misma URL.
+Para esta opcion necesitas un servidor PostgreSQL accesible desde tu entorno local.
+Si usas el mismo contenedor Docker para la base de datos, primero arranca Docker y expone el puerto 5432:
 
 ```bash
-cd snake-neon/backend
-npm start
+docker compose up -d db
+```
+
+Luego ejecuta el backend local con las credenciales definidas en `.env`:
+
+```bash
+npm run dev
+```
+
+### Opcion con Docker (recomendada)
+
+```bash
+docker compose up --build
 ```
 
 Luego abre en el navegador:
@@ -78,6 +90,9 @@ En ese caso, el frontend detectara que se esta sirviendo como `file://` y apunta
 | GET    | `/api/puntajes`               | Lista de puntajes ordenada de mayor a menor      |
 | GET    | `/api/puntajes?limite=10`     | Top N puntajes                                   |
 | POST   | `/api/puntajes`               | Registra/actualiza el mejor puntaje del jugador  |
+| GET    | `/api/usuarios?usuario=...`   | Verifica si un usuario ya está registrado        |
+| POST   | `/api/usuarios/registro`      | Registra un usuario con contraseña               |
+| POST   | `/api/usuarios/login`         | Inicia sesión con usuario y contraseña           |
 
 Cuerpo del POST:
 
@@ -111,7 +126,8 @@ Reglas:
 
 ## Notas tecnicas
 
-- El backend serializa las escrituras al archivo `datos/puntajes.json` para evitar carreras.
+- El backend ahora persiste los puntajes en PostgreSQL usando una tabla `puntajes`.
+- Se agregó login/registro en el menú principal y los usuarios se guardan en PostgreSQL.
 - El renderizador ajusta su resolucion al `devicePixelRatio` para verse nitido en pantallas HiDPI.
 - El bucle de juego usa `requestAnimationFrame` con un acumulador de tiempo, lo que
   desacopla el ritmo del juego del framerate del navegador.

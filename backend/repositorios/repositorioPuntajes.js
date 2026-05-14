@@ -1,54 +1,44 @@
 // repositorioPuntajes.js
-// Capa de acceso a datos. Aisla la persistencia (archivo JSON) del resto del sistema.
-// Expone operaciones de lectura y escritura atomicas para evitar corrupcion del archivo.
+// Capa de acceso a datos usando PostgreSQL.
+// Expone operaciones utilitarias para obtener puntajes y mantener el mejor registro por jugador.
 
-const fs = require('fs').promises;
-const path = require('path');
+const db = require('../db');
 
-const RUTA_ARCHIVO = path.join(__dirname, '..', 'datos', 'puntajes.json');
+const normalizarFecha = (fila) => ({
+    jugador: fila.jugador,
+    puntaje: Number(fila.puntaje),
+    fecha: fila.fecha ? String(fila.fecha) : null
+});
 
-// Cola de escrituras: serializa accesos para evitar condiciones de carrera al guardar.
-let cadenaEscritura = Promise.resolve();
+const obtenerTodos = async () => {
+    const { rows } = await db.query('SELECT jugador, puntaje, fecha FROM puntajes');
+    return rows.map(normalizarFecha);
+};
 
-async function leerArchivo() {
-    try {
-        const contenido = await fs.readFile(RUTA_ARCHIVO, 'utf8');
-        const datos = JSON.parse(contenido);
-        if (!Array.isArray(datos)) {
-            return [];
-        }
-        return datos;
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            // El archivo todavia no existe: se considera coleccion vacia.
-            return [];
-        }
-        if (error instanceof SyntaxError) {
-            console.warn('[repositorioPuntajes] Archivo corrupto, se inicializa vacio.');
-            return [];
-        }
-        throw error;
-    }
-}
+const crearOActualizarPuntaje = async (jugador, puntaje, fecha) => {
+    const consulta = `
+        WITH upsert AS (
+            INSERT INTO puntajes(jugador, puntaje, fecha)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (jugador) DO UPDATE
+              SET puntaje = EXCLUDED.puntaje,
+                  fecha = EXCLUDED.fecha
+              WHERE puntajes.puntaje < EXCLUDED.puntaje
+            RETURNING jugador, puntaje, fecha
+        )
+        SELECT * FROM upsert
+        UNION ALL
+        SELECT jugador, puntaje, fecha
+        FROM puntajes
+        WHERE jugador = $1
+          AND NOT EXISTS (SELECT 1 FROM upsert);
+    `;
 
-async function escribirArchivo(coleccion) {
-    const json = JSON.stringify(coleccion, null, 2);
-    await fs.writeFile(RUTA_ARCHIVO, json, 'utf8');
-}
-
-async function obtenerTodos() {
-    return await leerArchivo();
-}
-
-// Reemplaza por completo la coleccion de forma serializada para evitar carreras.
-function guardarTodos(coleccion) {
-    cadenaEscritura = cadenaEscritura
-        .catch(() => { /* errores previos no deben romper la cadena */ })
-        .then(() => escribirArchivo(coleccion));
-    return cadenaEscritura;
-}
+    const { rows } = await db.query(consulta, [jugador, puntaje, fecha]);
+    return normalizarFecha(rows[0]);
+};
 
 module.exports = {
     obtenerTodos,
-    guardarTodos
+    crearOActualizarPuntaje
 };
