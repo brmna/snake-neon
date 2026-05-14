@@ -43,6 +43,11 @@ jspm_packages/
 # Output of 'npm pack'
 *.tgz
 
+# Local data files and sensitive runtime state
+backend/datos/
+*.sqlite
+*.db
+
 # Yarn Integrity file
 .yarn-integrity
 
