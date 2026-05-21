@@ -66,6 +66,14 @@ npm run dev
 
 ### Opcion con Docker (recomendada)
 
+El proyecto levanta 3 imagenes Docker:
+
+| Servicio | Imagen | Responsabilidad |
+|----------|--------|-----------------|
+| `frontend` | `snake-neon-frontend:latest` | Sirve el juego con Nginx y redirige `/api` al backend |
+| `backend` | `snake-neon-backend:latest` | API REST Node.js + Express |
+| `db` | `postgres:15-alpine` | Base de datos PostgreSQL |
+
 ```bash
 docker compose up --build
 ```
@@ -73,8 +81,10 @@ docker compose up --build
 Luego abre en el navegador:
 
 ```
-http://localhost:3000
+http://localhost:8080
 ```
+
+La API tambien queda expuesta en `http://localhost:3000` para pruebas directas.
 
 ### Opcion B — abrir el frontend como archivo
 

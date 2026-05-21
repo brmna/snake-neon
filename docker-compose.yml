@@ -1,7 +1,17 @@
-version: '3.8'
-
 services:
+  frontend:
+    image: snake-neon-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - '8080:80'
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   backend:
+    image: snake-neon-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -9,7 +19,7 @@ services:
       - '3000:3000'
     environment:
       - PORT=3000
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-snake_neon}
     depends_on:
       - db
     restart: unless-stopped
@@ -18,9 +28,9 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-snake_neon}
     ports:
       - '5432:5432'
     volumes:
